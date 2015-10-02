@@ -1,6 +1,6 @@
 -module(esqlp).
 -export([parse/1, tokenize/1,loop/1]).
--include("esqlp.hrl").
+-include("esqp.hrl").
 
 % -compile(export_all).
 -define(A(A),(A == $a orelse A == $A)).

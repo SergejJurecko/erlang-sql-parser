@@ -1,9 +1,8 @@
-{application, esqlp,
+{application, esqp,
  [
   {description, "SQL parsing library written in pure Erlang."},
   {vsn, "0.1"},
   {modules, [
-             esqlp
             ]},
   {registered, []},
   {applications, [
