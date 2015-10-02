@@ -1,5 +1,5 @@
--module(esqlp).
--export([parse/1, tokenize/1,loop/1]).
+-module(esqp).
+-export([parse/1, tokenize/1,loop/2]).
 -include("esqp.hrl").
 
 % -compile(export_all).
@@ -27,228 +27,273 @@
 -define(X(X),(X == $x orelse X == $X)).
 -define(Y(Y),(Y == $y orelse Y == $Y)).
 -define(SKIP(X),(X == $\s orelse X == $\n  orelse X == $\t)).
--define(WORD(X),(list_to_binary(lists:reverse(X)))).
+% -define(WORD(X),(list_to_binary(lists:reverse(X)))).
+-define(WORD(X),X).
 
 
-loop(N) ->
+loop(N,Sql) ->
 	S = os:timestamp(),
-	loop1(N),
+	loop1(N,Sql),
 	timer:now_diff(os:timestamp(),S).
 
-loop1(0) ->
+loop1(0,_) ->
 	ok;
-loop1(N) ->
-	% term_to_binary({self(),{appendentries_response,12084,<<"asdlhf">>,aasdf,1,2,3,5}},[compressed,{minor_version,1}]),
-	% tokenize(<<"SELECt FROM WhERE + - NOT NULL DISTiNCT ALL ">>),
-	tokenize(<<"SELECT FROM WHERE + - NOT NULL DISTINCT 'AAAAALADJKLAKHDAUDGAIUDHAODHOADH' ALL ">>),
-	loop1(N-1).
+loop1(N,Sql) ->
+	tokenize(Sql),
+	loop1(N-1,Sql).
 
 
 % Comments not supported atm.
 tokenize(B) ->
-	tkn(B,[]).
-tkn(<<" ",B/binary>>,L) ->
-	tkn(B,L);
-tkn(<<$\t,B/binary>>,L) ->
-	tkn(B,L);
-tkn(<<$\r,B/binary>>,L) ->
-	tkn(B,L);
-tkn(<<$\n,B/binary>>,L) ->
-	tkn(B,L);
-tkn(<<"-",B/binary>>,L) ->
-	tkn(B,[?TK_MINUS|L]);
-tkn(<<"(",B/binary>>,L) ->
-	tkn(B,[?TK_LP|L]);
-tkn(<<")",B/binary>>,L) ->
-	tkn(B,[?TK_RP|L]);
-tkn(<<";",B/binary>>,L) ->
-	tkn(B,[?TK_SEMI|L]);
-tkn(<<"+",B/binary>>,L) ->
-	tkn(B,[?TK_PLUS|L]);
-tkn(<<"*",B/binary>>,L) ->
-	tkn(B,[?TK_STAR|L]);
-tkn(<<"%",B/binary>>,L) ->
-	tkn(B,[?TK_REM|L]);
-tkn(<<"=",B/binary>>,L) ->
-	tkn(B,[?TK_EQ|L]);
-tkn(<<"<=",B/binary>>,L) ->
-	tkn(B,[?TK_LE|L]);
-tkn(<<"<>",B/binary>>,L) ->
-	tkn(B,[?TK_NE|L]);
-tkn(<<"<<",B/binary>>,L) ->
-	tkn(B,[?TK_LSHIFT|L]);
-tkn(<<"<",B/binary>>,L) ->
-	tkn(B,[?TK_LT|L]);
-tkn(<<">=",B/binary>>,L) ->
-	tkn(B,[?TK_GE|L]);
-tkn(<<">>",B/binary>>,L) ->
-	tkn(B,[?TK_RSHIFT|L]);
-tkn(<<">",B/binary>>,L) ->
-	tkn(B,[?TK_GT|L]);
-tkn(<<"!=",B/binary>>,L) ->
-	tkn(B,[?TK_NE|L]);
-tkn(<<"||",B/binary>>,L) ->
-	tkn(B,[?TK_BITOR|L]);
-tkn(<<"|",B/binary>>,L) ->
-	tkn(B,[?TK_CONCAT|L]);
-tkn(<<",",B/binary>>,L) ->
-	tkn(B,[?TK_COMMA|L]);
-tkn(<<"&",B/binary>>,L) ->
-	tkn(B,[?TK_BITAND|L]);
-tkn(<<"~~",B/binary>>,L) ->
-	tkn(B,[?TK_BITNOT|L]);
-tkn(<<"select",C,B/binary>>,L) when ?SKIP(C) ->
-	tkn(B,[?TK_SELECT|L]);
-tkn(<<"SELECT",C,B/binary>>,L) when ?SKIP(C) ->
-	tkn(B,[?TK_SELECT|L]);
-tkn(<<"Select",C,B/binary>>,L) when ?SKIP(C) ->
-	tkn(B,[?TK_SELECT|L]);
-tkn(<<"insert",C,B/binary>>,L) when ?SKIP(C) ->
-	tkn(B,[?TK_INSERT|L]);
-tkn(<<"INSERT",C,B/binary>>,L) when ?SKIP(C) ->
-	tkn(B,[?TK_INSERT|L]);
-tkn(<<"Insert",C,B/binary>>,L) when ?SKIP(C) ->
-	tkn(B,[?TK_INSERT|L]);
-tkn(<<"delete",C,B/binary>>,L) when ?SKIP(C) ->
-	tkn(B,[?TK_DELETE|L]);
-tkn(<<"DELETE",C,B/binary>>,L) when ?SKIP(C) ->
-	tkn(B,[?TK_DELETE|L]);
-tkn(<<"Delete",C,B/binary>>,L) when ?SKIP(C) ->
-	tkn(B,[?TK_DELETE|L]);
-tkn(<<"create",C,B/binary>>,L) when ?SKIP(C) ->
-	tkn(B,[?TK_CREATE|L]);
-tkn(<<"CREATE",C,B/binary>>,L) when ?SKIP(C) ->
-	tkn(B,[?TK_CREATE|L]);
-tkn(<<"Create",C,B/binary>>,L) when ?SKIP(C) ->
-	tkn(B,[?TK_CREATE|L]);
-tkn(<<"update",C,B/binary>>,L) when ?SKIP(C) ->
-	tkn(B,[?TK_UPDATE|L]);
-tkn(<<"UPDATE",C,B/binary>>,L) when ?SKIP(C) ->
-	tkn(B,[?TK_UPDATE|L]);
-tkn(<<"Update",C,B/binary>>,L) when ?SKIP(C) ->
-	tkn(B,[?TK_UPDATE|L]);
-tkn(<<"all",C,B/binary>>,L) when ?SKIP(C) ->
-	tkn(B,[?TK_ALL|L]);
-tkn(<<"ALL",C,B/binary>>,L) when ?SKIP(C) ->
-	tkn(B,[?TK_ALL|L]);
-tkn(<<"All",C,B/binary>>,L) when ?SKIP(C) ->
-	tkn(B,[?TK_ALL|L]);
-tkn(<<"as",C,B/binary>>,L) when ?SKIP(C) ->
-	tkn(B,[?TK_AS|L]);
-tkn(<<"As",C,B/binary>>,L) when ?SKIP(C) ->
-	tkn(B,[?TK_AS|L]);
-tkn(<<"aS",C,B/binary>>,L) when ?SKIP(C) ->
-	tkn(B,[?TK_AS|L]);
-tkn(<<"AS",C,B/binary>>,L) when ?SKIP(C) ->
-	tkn(B,[?TK_AS|L]);
-tkn(<<"in",C,B/binary>>,L) when ?SKIP(C) ->
-	tkn(B,[?TK_IN|L]);
-tkn(<<"In",C,B/binary>>,L) when ?SKIP(C) ->
-	tkn(B,[?TK_IN|L]);
-tkn(<<"iN",C,B/binary>>,L) when ?SKIP(C) ->
-	tkn(B,[?TK_IN|L]);
-tkn(<<"IN",C,B/binary>>,L) when ?SKIP(C) ->
-	tkn(B,[?TK_IN|L]);
-tkn(<<"not",C,B/binary>>,L) when ?SKIP(C) ->
-	tkn(B,[?TK_NOT|L]);
-tkn(<<"Not",C,B/binary>>,L) when ?SKIP(C) ->
-	tkn(B,[?TK_NOT|L]);
-tkn(<<"NOT",C,B/binary>>,L) when ?SKIP(C) ->
-	tkn(B,[?TK_NOT|L]);
-tkn(<<"from",C,B/binary>>,L) when ?SKIP(C) ->
-	tkn(B,[?TK_FROM|L]);
-tkn(<<"From",C,B/binary>>,L) when ?SKIP(C) ->
-	tkn(B,[?TK_FROM|L]);
-tkn(<<"FROM",C,B/binary>>,L) when ?SKIP(C) ->
-	tkn(B,[?TK_FROM|L]);
-tkn(<<"distinct",C,B/binary>>,L) when ?SKIP(C) ->
-	tkn(B,[?TK_DISTINCT|L]);
-tkn(<<"Distinct",C,B/binary>>,L) when ?SKIP(C) ->
-	tkn(B,[?TK_DISTINCT|L]);
-tkn(<<"DISTINCT",C,B/binary>>,L) when ?SKIP(C) ->
-	tkn(B,[?TK_DISTINCT|L]);
-tkn(<<"where",C,B/binary>>,L) when ?SKIP(C) ->
-	tkn(B,[?TK_WHERE|L]);
-tkn(<<"Where",C,B/binary>>,L) when ?SKIP(C) ->
-	tkn(B,[?TK_WHERE|L]);
-tkn(<<"WHERE",C,B/binary>>,L) when ?SKIP(C) ->
-	tkn(B,[?TK_WHERE|L]);
-tkn(<<"group",C,B/binary>>,L) when ?SKIP(C) ->
-	tkn(B,[?TK_GROUP|L]);
-tkn(<<"Group",C,B/binary>>,L) when ?SKIP(C) ->
-	tkn(B,[?TK_GROUP|L]);
-tkn(<<"GROUP",C,B/binary>>,L) when ?SKIP(C) ->
-	tkn(B,[?TK_GROUP|L]);
-% tkn(<<"like",C,B/binary>>,L) when ?SKIP(C) ->
-% 	tkn(B,[?TK_LIKE|L]);
-% tkn(<<"Like",C,B/binary>>,L) when ?SKIP(C) ->
-% 	tkn(B,[?TK_LIKE|L]);
-% tkn(<<"LIKE",C,B/binary>>,L) when ?SKIP(C) ->
-% 	tkn(B,[?TK_LIKE|L]);
-tkn(<<"null",C,B/binary>>,L) when ?SKIP(C) ->
-	tkn(B,[?TK_NULL|L]);
-tkn(<<"Null",C,B/binary>>,L) when ?SKIP(C) ->
-	tkn(B,[?TK_NULL|L]);
-tkn(<<"NULL",C,B/binary>>,L) when ?SKIP(C) ->
-	tkn(B,[?TK_NULL|L]);
-tkn(<<C,R,E,A,T,E,SKIP,B/binary>>,L) when ?SKIP(SKIP) andalso ?C(C) andalso ?R(R) andalso ?E(E) andalso ?A(A) andalso ?T(T) ->
-	tkn(B,[?TK_CREATE|L]);
-tkn(<<S,E,L,E1,C,T,SKIP,B/binary>>,LL) when ?SKIP(SKIP) andalso ?S(S) andalso ?E(E) andalso ?E(E1) andalso ?L(L) andalso ?C(C) andalso ?T(T) ->
-	tkn(B,[?TK_SELECT|LL]);
-tkn(<<I,N,S,E,R,T,SKIP,B/binary>>,L) when ?SKIP(SKIP) andalso ?I(I) andalso 
-	?N(N) andalso ?S(S) andalso ?E(E) andalso ?R(R) andalso ?T(T) ->
-	tkn(B,[?TK_INSERT|L]);
-tkn(<<U,P,D,A,T,E,SKIP,B/binary>>,L) when ?SKIP(SKIP) andalso ?U(U) andalso ?P(P) andalso 
-	?D(D) andalso ?A(A) andalso ?T(T) andalso ?E(E) ->
-	tkn(B,[?TK_UPDATE|L]);
-tkn(<<D,E,L,E,T,E,SKIP,B/binary>>,L) when ?SKIP(SKIP) andalso ?D(D) andalso ?E(E) andalso ?L(L) andalso ?T(T)  ->
-	tkn(B,[?TK_DELETE|L]);
-tkn(<<F,R,O,M,SKIP,B/binary>>,L) when ?SKIP(SKIP) andalso ?F(F) andalso ?R(R) andalso ?O(O) andalso ?M(M)  ->
-	tkn(B,[?TK_FROM|L]);
-tkn(<<A,L,L1,C,B/binary>>,LL) when ?SKIP(C) andalso ?A(A) andalso ?L(L) andalso ?L(L1) ->
-	tkn(B,[?TK_ALL|LL]);
-tkn(<<N,O,T,C,B/binary>>,L) when ?SKIP(C) andalso ?N(N) andalso ?O(O) andalso ?T(T) ->
-	tkn(B,[?TK_NOT|L]);
-% tkn(<<L,I,K,E,C,B/binary>>,L) when ?SKIP(C) andalso ?L(L) andalso ?I(I) andalso ?K(K) andalso ?E(E) ->
-% 	tkn(B,[?TK_LIKE|L]);
-tkn(<<N,U,L,L,C,B/binary>>,LL) when ?SKIP(C) andalso ?L(L) andalso ?N(N) andalso ?U(U) ->
-	tkn(B,[?TK_NULL|LL]);
-tkn(<<D,I,S,T,I1,N,C,T,SK,B/binary>>,L) when ?SKIP(SK) andalso ?D(D) andalso ?I(I) andalso ?I(I1) andalso ?S(S) andalso
-	?T(T) andalso ?N(N) andalso ?C(C) ->
-	tkn(B,[?TK_DISTINCT|L]);
-tkn(<<W,H,E,R,E,SK,B/binary>>,L) when ?SKIP(SK) andalso ?W(W) andalso ?H(H) andalso ?E(E) andalso ?R(R) ->
-	tkn(B,[?TK_WHERE|L]);
-tkn(<<G,R,O,U,P,SK,B/binary>>,L) when ?SKIP(SK) andalso ?G(G) andalso ?R(R) andalso ?O(O) andalso ?U(U) andalso ?P(P) ->
-	tkn(B,[?TK_GROUP|L]);
-tkn(<<"'",B/binary>>,L) ->
+	tkn(undef,B,[]).
+tkn(undef,<<" ",B/binary>>,L) ->
+	tkn(undef,B,L);
+tkn(undef,<<$\t,B/binary>>,L) ->
+	tkn(undef,B,L);
+tkn(undef,<<$\r,B/binary>>,L) ->
+	tkn(undef,B,L);
+tkn(undef,<<$\n,B/binary>>,L) ->
+	tkn(undef,B,L);
+tkn(undef,<<"-",B/binary>>,L) ->
+	tkn(undef,B,[?TK_MINUS|L]);
+tkn(undef,<<"(",B/binary>>,L) ->
+	tkn(undef,B,[?TK_LP|L]);
+tkn(undef,<<")",B/binary>>,L) ->
+	tkn(undef,B,[?TK_RP|L]);
+tkn(undef,<<";",B/binary>>,L) ->
+	tkn(undef,B,[?TK_SEMI|L]);
+tkn(undef,<<"+",B/binary>>,L) ->
+	tkn(undef,B,[?TK_PLUS|L]);
+tkn(undef,<<"*",B/binary>>,L) ->
+	tkn(undef,B,[?TK_STAR|L]);
+tkn(undef,<<"%",B/binary>>,L) ->
+	tkn(undef,B,[?TK_REM|L]);
+tkn(undef,<<"=",B/binary>>,L) ->
+	tkn(undef,B,[?TK_EQ|L]);
+tkn(undef,<<"<=",B/binary>>,L) ->
+	tkn(undef,B,[?TK_LE|L]);
+tkn(undef,<<"<>",B/binary>>,L) ->
+	tkn(undef,B,[?TK_NE|L]);
+tkn(undef,<<"<<",B/binary>>,L) ->
+	tkn(undef,B,[?TK_LSHIFT|L]);
+tkn(undef,<<"<",B/binary>>,L) ->
+	tkn(undef,B,[?TK_LT|L]);
+tkn(undef,<<">=",B/binary>>,L) ->
+	tkn(undef,B,[?TK_GE|L]);
+tkn(undef,<<">>",B/binary>>,L) ->
+	tkn(undef,B,[?TK_RSHIFT|L]);
+tkn(undef,<<">",B/binary>>,L) ->
+	tkn(undef,B,[?TK_GT|L]);
+tkn(undef,<<"!=",B/binary>>,L) ->
+	tkn(undef,B,[?TK_NE|L]);
+tkn(undef,<<"||",B/binary>>,L) ->
+	tkn(undef,B,[?TK_BITOR|L]);
+tkn(undef,<<"|",B/binary>>,L) ->
+	tkn(undef,B,[?TK_CONCAT|L]);
+tkn(undef,<<",",B/binary>>,L) ->
+	tkn(undef,B,[?TK_COMMA|L]);
+tkn(undef,<<"&",B/binary>>,L) ->
+	tkn(undef,B,[?TK_BITAND|L]);
+tkn(undef,<<"~~",B/binary>>,L) ->
+	tkn(undef,B,[?TK_BITNOT|L]);
+tkn(undef,<<"select",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_SELECT|L]);
+tkn(undef,<<"SELECT",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_SELECT|L]);
+tkn(undef,<<"Select",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_SELECT|L]);
+tkn(undef,<<"insert",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_INSERT|L]);
+tkn(undef,<<"INSERT",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_INSERT|L]);
+tkn(undef,<<"Insert",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_INSERT|L]);
+tkn(undef,<<"delete",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_DELETE|L]);
+tkn(undef,<<"DELETE",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_DELETE|L]);
+tkn(undef,<<"Delete",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_DELETE|L]);
+tkn(undef,<<"create",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_CREATE|L]);
+tkn(undef,<<"CREATE",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_CREATE|L]);
+tkn(undef,<<"Create",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_CREATE|L]);
+tkn(undef,<<"update",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_UPDATE|L]);
+tkn(undef,<<"UPDATE",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_UPDATE|L]);
+tkn(undef,<<"Update",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_UPDATE|L]);
+tkn(undef,<<"all",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_ALL|L]);
+tkn(undef,<<"ALL",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_ALL|L]);
+tkn(undef,<<"All",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_ALL|L]);
+tkn(undef,<<"as",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_AS|L]);
+tkn(undef,<<"As",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_AS|L]);
+tkn(undef,<<"aS",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_AS|L]);
+tkn(undef,<<"AS",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_AS|L]);
+tkn(undef,<<"in",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_IN|L]);
+tkn(undef,<<"In",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_IN|L]);
+tkn(undef,<<"iN",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_IN|L]);
+tkn(undef,<<"IN",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_IN|L]);
+tkn(undef,<<"not",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_NOT|L]);
+tkn(undef,<<"Not",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_NOT|L]);
+tkn(undef,<<"NOT",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_NOT|L]);
+tkn(undef,<<"from",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_FROM|L]);
+tkn(undef,<<"From",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_FROM|L]);
+tkn(undef,<<"FROM",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_FROM|L]);
+tkn(undef,<<"distinct",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_DISTINCT|L]);
+tkn(undef,<<"Distinct",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_DISTINCT|L]);
+tkn(undef,<<"DISTINCT",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_DISTINCT|L]);
+tkn(undef,<<"where",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_WHERE|L]);
+tkn(undef,<<"Where",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_WHERE|L]);
+tkn(undef,<<"WHERE",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_WHERE|L]);
+tkn(undef,<<"group",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_GROUP|L]);
+tkn(undef,<<"Group",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_GROUP|L]);
+tkn(undef,<<"GROUP",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_GROUP|L]);
+tkn(undef,<<"limit",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_LIMIT|L]);
+tkn(undef,<<"Limit",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_LIMIT|L]);
+tkn(undef,<<"LIMIT",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_LIMIT|L]);
+tkn(undef,<<"offset",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_OFFSET|L]);
+tkn(undef,<<"Offset",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_OFFSET|L]);
+tkn(undef,<<"OFFSET",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_OFFSET|L]);
+tkn(undef,<<"null",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_NULL|L]);
+tkn(undef,<<"Null",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_NULL|L]);
+tkn(undef,<<"NULL",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_NULL|L]);
+tkn(undef,<<"or",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_OR|L]);
+tkn(undef,<<"Or",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_OR|L]);
+tkn(undef,<<"oR",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_OR|L]);
+tkn(undef,<<"OR",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_OR|L]);
+tkn(undef,<<"and",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_AND|L]);
+tkn(undef,<<"And",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_AND|L]);
+tkn(undef,<<"AND",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_AND|L]);
+tkn(undef,<<"'",B/binary>>,L) ->
 	case binary:split(B,<<"'">>) of
 		[String,<<"'",Rem/binary>>] ->
-			tknstr([String,<<"''">>],Rem,L);
+			tkn([str,[String,<<"''">>]],Rem,L);
 		[String,Rem] ->
-			tkn(Rem,[[String]|L])
+			tkn(undef,Rem,[{?TK_STRING,String}|L])
 	end;
-tkn(<<".",B/binary>>,L) ->
-	tkn(B,[?TK_DOT|L]);
-tkn(<<C,B/binary>>,L) when C >= $0, C =< $9 ->
-	tknnum(<<C,B/binary>>,[],L,int);
-tkn(<<>>,L) ->
+tkn(undef,<<".",B/binary>>,L) ->
+	tkn(undef,B,[?TK_DOT|L]);
+tkn(undef,<<C,B/binary>>,L) when C >= $0, C =< $9 ->
+	tkn([int,[C]],B,L);
+tkn(undef,<<C,B/binary>>,L) when C >= $a, C =< $z ->
+	tkn([C],B,L);
+tkn(undef,<<C,B/binary>>,L) when C >= $A, C =< $Z ->
+	tkn([C+32],B,L);
+tkn([int,N],<<C,B/binary>>,L) when C >= $0, C =< $9 ->
+	tkn([int,[C|N]],B,L);
+tkn([float,N],<<C,B/binary>>,L) when C >= $0, C =< $9 ->
+	tkn([float,[C|N]],B,L);
+tkn([int,N],<<".",B/binary>>,L) ->
+	tkn([float,[$.|N]],B,L);
+tkn([int,N],B,L) ->
+	tkn(undef,B,[{?TK_INTEGER,list_to_integer(lists:reverse(N))}|L]);
+tkn([float,N],B,L) ->
+	tkn(undef,B,[{?TK_FLOAT,list_to_float(lists:reverse(N))}|L]);
+tkn([str,S],Bin,L) ->
+	case binary:split(Bin,<<"'">>) of
+		[String,<<"'",Rem/binary>>] ->
+			tkn([str,[S,String,<<"''">>]],Rem,L);
+		[String,Rem] ->
+			tkn(undef,Rem,[{?TK_STRING,[S,String]}|L])
+	end;
+tkn([_|_]=W,<<C,B/binary>>,L) when C >= $a, C =< $z ->
+	tkn([C|W],B,L);
+tkn([_|_]=W,<<C,B/binary>>,L) when C >= $A, C =< $Z ->
+	tkn([(C+32)|W],B,L);
+tkn([_|_]=W,B,L) ->
+	case W of
+		"sa" ->
+			tkn(undef,B,[?TK_AS|L]);
+		"tceles" ->
+			tkn(undef,B,[?TK_SELECT|L]);
+		"tresni" ->
+			tkn(undef,B,[?TK_INSERT|L]);
+		"puorg" ->
+			tkn(undef,B,[?TK_GROUP|L]);
+		"tesffo" ->
+			tkn(undef,B,[?TK_OFFSET|L]);
+		"timil" ->
+			tkn(undef,B,[?TK_LIMIT|L]);
+		"erehw" ->
+			tkn(undef,B,[?TK_WHERE|L]);
+		"lla" ->
+			tkn(undef,B,[?TK_ALL|L]);
+		"tcnitsid" ->
+			tkn(undef,B,[?TK_DISTINCT|L]);
+		"llun" ->
+			tkn(undef,B,[?TK_NULL|L]);
+		"morf" ->
+			tkn(undef,B,[?TK_FROM|L]);
+		"ton" ->
+			tkn(undef,B,[?TK_NOT|L]);
+		"ni" ->
+			tkn(undef,B,[?TK_IN|L]);
+		"eteled" ->
+			tkn(undef,B,[?TK_DELETE|L]);
+		"etadpu" ->
+			tkn(undef,B,[?TK_UPDATE|L]);
+		"dna" ->
+			tkn(undef,B,[?TK_AND|L]);
+		"ro" ->
+			tkn(undef,B,[?TK_OR|L]);
+		_ ->
+			tkn(undef,B,[{?TK_ID,?WORD(lists:reverse(W))}|L])
+	end;
+tkn(undef,<<>>,L) ->
 	lists:reverse(L).
-
-tknnum(<<C,B/binary>>,N,L,Type) when C >= $0, C =< $9 ->
-	tknnum(<<B/binary>>,[C|N],L,Type);
-tknnum(<<".",B/binary>>,N,L,_) ->
-	tknnum(B,[$.|N],L,float);
-tknnum(B,N,L,int) ->
-	tkn(B,[list_to_binary(lists:reverse(N))|L]);
-tknnum(B,N,L,float) ->
-	tkn(B,[list_to_float(lists:reverse(N))|L]).
 
 tknstr(Str,B,L) ->
 	case binary:split(B,<<"'">>) of
 		[String,<<"'",Rem/binary>>] ->
 			tknstr([Str,String,<<"''">>],Rem,L);
 		[String,Rem] ->
-			tkn(Rem,[[Str,String]|L])
+			tkn(undef,Rem,[[Str,String]|L])
 	end.
 
 
