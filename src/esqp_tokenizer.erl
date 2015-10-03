@@ -60,6 +60,8 @@ tkn(undef,<<"&",B/binary>>,L) ->
 	tkn(undef,B,[?TK_BITAND|L]);
 tkn(undef,<<"~~",B/binary>>,L) ->
 	tkn(undef,B,[?TK_BITNOT|L]);
+tkn(undef,<<"?",B/binary>>,L) ->
+	tkn([var,[]],B,L);
 tkn(undef,<<"select",C,B/binary>>,L) when ?SKIP(C) ->
 	tkn(undef,B,[?TK_SELECT|L]);
 tkn(undef,<<"SELECT",C,B/binary>>,L) when ?SKIP(C) ->
@@ -191,6 +193,8 @@ tkn(undef,<<C,B/binary>>,L) when C >= $A, C =< $Z ->
 	tkn([C+32],B,L);
 tkn([int,N],<<C,B/binary>>,L) when C >= $0, C =< $9 ->
 	tkn([int,[C|N]],B,L);
+tkn([var,N],<<C,B/binary>>,L) when C >= $0, C =< $9 ->
+	tkn([var,[C|N]],B,L);
 tkn([float,N],<<C,B/binary>>,L) when C >= $0, C =< $9 ->
 	tkn([float,[C|N]],B,L);
 tkn([int,N],<<".",B/binary>>,L) ->
@@ -199,6 +203,8 @@ tkn([int,N],B,L) ->
 	tkn(undef,B,[{?TK_INTEGER,list_to_integer(lists:reverse(N))}|L]);
 tkn([float,N],B,L) ->
 	tkn(undef,B,[{?TK_FLOAT,list_to_float(lists:reverse(N))}|L]);
+tkn([var,N],B,L) ->
+	tkn(undef,B,[{?TK_VARIABLE,list_to_integer(lists:reverse(N))}|L]);
 tkn([str,S],Bin,L) ->
 	case binary:split(Bin,<<"'">>) of
 		[String,<<"'",Rem/binary>>] ->

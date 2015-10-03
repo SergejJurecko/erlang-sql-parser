@@ -50,9 +50,28 @@ colfun(P,[?TK_RP|T],Func,FuncParam) ->
 	cols(P#select{cols = [{Func,lists:reverse(FuncParam)}|P#select.cols]}, T).
 
 where(P,T) ->
-	P.
+	{ok,Expr,T1} = expr([],[],T),
+	select_fwd(P#select{where = Expr},T1).
 
 group(P,T) ->
 	P.
+
+select_fwd(P,[?TK_GROUP|T]) ->
+	group(P,T).
+
+% Literals
+expr(Lit, Op, [{?TK_INTEGER,Int}|T]) ->
+	expr([{?TK_INTEGER,Int}|Lit], Op, T);
+expr(Lit, Op, [{?TK_STRING,Str}|T]) ->
+	expr([{?TK_STRING,Str}|Lit],Op, T);
+expr(Lit, Op, [{?TK_FLOAT,Str}|T]) ->
+	expr([{?TK_FLOAT,Str}|Lit],Op, T);
+expr(Lit, Op, [?TK_NULL|T]) ->
+	expr([?TK_NULL|Lit],Op, T);
+expr(Lit, Op, [{?TK_VARIABLE,N}|T]) ->
+	expr([{?TK_VARIABLE,N}|Lit],Op, T).
+
+
+
 
 
