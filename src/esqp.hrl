@@ -6,7 +6,7 @@
 -record(select,{
 % distinct or all
 modifier = all, 
-% [ColumnNameBin1,ColumnNameBin2,...]
+% [ColumnNameBin1,ColumnNameBin2,{FunctionName,[P1,P2]}...]
 cols = [], 
 % #from{}
 from = [],
