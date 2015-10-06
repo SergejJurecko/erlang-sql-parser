@@ -74,6 +74,8 @@ expr(Lit, Op, [{?TK_ID,Db},?TK_DOT,{?TK_ID,Table},?TK_DOT,{?TK_ID,Col}|T]) ->
 	expr([{?TK_COLUMN,{Db,Table,Col}}|Lit], Op, T);
 expr(Lit, Op, [{?TK_ID,Table},?TK_DOT,{?TK_ID,Col}|T]) ->
 	expr([{?TK_COLUMN,{undefined,Table,Col}}|Lit], Op, T);
+expr(Lit, Op, [{?TK_ID, Func},?TK_LP|T]) ->
+	expr_func(Lit, Op, Func, [], T);
 expr(Lit, Op, [{?TK_ID,Col}|T]) ->
 	expr([{?TK_COLUMN,Col}|Lit], Op, T);
 % binary expressions
@@ -97,6 +99,13 @@ expr(Lit,[Oph|Op],[H|T]) ->
 		_ ->
 			expr([Oph|Lit],Op,[H|T])
 	end.
+
+expr_func(Lit, Op, Func, Param, [?TK_RP|T]) ->
+	expr(Lit, [{?TK_FUNCTION,Func, lists:reverse(Param)}|Op], T);
+expr_func(Lit, Op, Func, Param, [{?TK_ID, P},Next|T]) when Next == ?TK_COMMA; Next == ?TK_RP ->
+	expr_func(Lit, Op, Func, [P|Param],[Next|T]);
+expr_func(Lit, Op, Func, Param, [?TK_COMMA,{?TK_ID,_} = Next|T]) ->
+	expr_func(Lit, Op, Func, Param, [Next|T]).
 
 % Highest to lowest
 priority(?TK_CONCAT) ->
