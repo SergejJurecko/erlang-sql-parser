@@ -30,8 +30,12 @@ tkn(undef,<<"+",B/binary>>,L) ->
 	tkn(undef,B,[?TK_PLUS|L]);
 tkn(undef,<<"*",B/binary>>,L) ->
 	tkn(undef,B,[?TK_STAR|L]);
+tkn(undef,<<"/",B/binary>>,L) ->
+	tkn(undef,B,[?TK_SLASH|L]);
 tkn(undef,<<"%",B/binary>>,L) ->
 	tkn(undef,B,[?TK_REM|L]);
+tkn(undef,<<"==",B/binary>>,L) ->
+	tkn(undef,B,[?TK_EQ|L]);
 tkn(undef,<<"=",B/binary>>,L) ->
 	tkn(undef,B,[?TK_EQ|L]);
 tkn(undef,<<"<=",B/binary>>,L) ->
@@ -51,9 +55,9 @@ tkn(undef,<<">",B/binary>>,L) ->
 tkn(undef,<<"!=",B/binary>>,L) ->
 	tkn(undef,B,[?TK_NE|L]);
 tkn(undef,<<"||",B/binary>>,L) ->
-	tkn(undef,B,[?TK_BITOR|L]);
-tkn(undef,<<"|",B/binary>>,L) ->
 	tkn(undef,B,[?TK_CONCAT|L]);
+tkn(undef,<<"|",B/binary>>,L) ->
+	tkn(undef,B,[?TK_BITOR|L]);
 tkn(undef,<<",",B/binary>>,L) ->
 	tkn(undef,B,[?TK_COMMA|L]);
 tkn(undef,<<"&",B/binary>>,L) ->
@@ -62,6 +66,14 @@ tkn(undef,<<"~~",B/binary>>,L) ->
 	tkn(undef,B,[?TK_BITNOT|L]);
 tkn(undef,<<"?",B/binary>>,L) ->
 	tkn([var,[]],B,L);
+tkn(undef,<<"is",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_IS|L]);
+tkn(undef,<<"Is",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_IS|L]);
+tkn(undef,<<"iS",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_IS|L]);
+tkn(undef,<<"IS",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_IS|L]);
 tkn(undef,<<"select",C,B/binary>>,L) when ?SKIP(C) ->
 	tkn(undef,B,[?TK_SELECT|L]);
 tkn(undef,<<"SELECT",C,B/binary>>,L) when ?SKIP(C) ->
@@ -162,6 +174,12 @@ tkn(undef,<<"Null",C,B/binary>>,L) when ?SKIP(C) ->
 	tkn(undef,B,[?TK_NULL|L]);
 tkn(undef,<<"NULL",C,B/binary>>,L) when ?SKIP(C) ->
 	tkn(undef,B,[?TK_NULL|L]);
+tkn(undef,<<"like",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_LIKE_KW|L]);
+tkn(undef,<<"Like",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_LIKE_KW|L]);
+tkn(undef,<<"LIKE",C,B/binary>>,L) when ?SKIP(C) ->
+	tkn(undef,B,[?TK_LIKE_KW|L]);
 tkn(undef,<<"or",C,B/binary>>,L) when ?SKIP(C) ->
 	tkn(undef,B,[?TK_OR|L]);
 tkn(undef,<<"Or",C,B/binary>>,L) when ?SKIP(C) ->
@@ -252,6 +270,8 @@ tkn([_|_]=W,B,L) ->
 			tkn(undef,B,[?TK_AND|L]);
 		"ro" ->
 			tkn(undef,B,[?TK_OR|L]);
+		"ekil" ->
+			tkn(undef,B,[?TK_LIKE_KW|L]);
 		_ ->
 			tkn(undef,B,[{?TK_ID,?WORD(lists:reverse(W))}|L])
 	end;
