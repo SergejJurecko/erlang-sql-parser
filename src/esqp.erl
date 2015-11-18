@@ -15,12 +15,12 @@ type([?TK_SELECT|T]) ->
 
 loop(N,Sql) ->
 	S = os:timestamp(),
-	loop1(N,Sql),
+	loop1(N,iolist_to_binary(Sql)),
 	timer:now_diff(os:timestamp(),S).
 
 loop1(0,_) ->
 	ok;
 loop1(N,Sql) ->
-	esqp_tokenize:tokenize(Sql),
+	esqp_tokenizer:tokenize(Sql),
 	loop1(N-1,Sql).
 
